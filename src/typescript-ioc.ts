@@ -8,6 +8,26 @@
 import 'reflect-metadata';
 
 /**
+ * A decorator to add qualifier to constructor prototype of this class. The key of qualifier is 
+ * '__qualifer': let T be a class, T.prototype['__qualifier'] returns the name of qualifier. It
+ * is important to note, that you should never need to use direct access to qualifier.
+ * 
+ * ```
+ * @ Qualifier('personDAO')
+ * class PersonDAOImpl implements PersonDAO {
+ *
+ * }
+ * ```
+ * 
+ * @param qualifierName the name of qualifier
+ */
+export function Qualifier(qualifierName: string) {
+    return (target: Function) => {
+        target.prototype.__qualifier = qualifierName;
+    }
+}
+
+/**
  * A decorator to tell the container that this class should be handled by the Singleton [[Scope]].
  *
  * ```
@@ -51,7 +71,7 @@ export function Singleton(target: Function) {
  * @param scope The scope that will handle instantiations for this class.
  */
 export function Scoped(scope: Scope) {
-    return function(target: Function) {
+    return function (target: Function) {
         IoCContainer.bind(target).scope(scope);
     };
 }
@@ -74,7 +94,7 @@ export function Scoped(scope: Scope) {
  * @param provider The provider that will handle instantiations for this class.
  */
 export function Provided(provider: Provider) {
-    return function(target: Function) {
+    return function (target: Function) {
         IoCContainer.bind(target).provider(provider);
     };
 }
@@ -100,7 +120,7 @@ export function Provided(provider: Provider) {
  * @param target The base class that will be replaced by this class.
  */
 export function Provides(target: Function) {
-    return function(to: Function) {
+    return function (to: Function) {
         IoCContainer.bind(target).to(to);
     };
 }
@@ -211,7 +231,7 @@ export class Container {
      * Internal storage for snapshots
      * @type {providers: Map<Function, Provider>; scopes: Map<Function, Scope>}
      */
-    private static snapshots: {providers: Map<Function, Provider>; scopes: Map<Function, Scope>} = {
+    private static snapshots: { providers: Map<Function, Provider>; scopes: Map<Function, Scope> } = {
         providers: new Map(),
         scopes: new Map(),
     };
@@ -263,7 +283,7 @@ export class Container {
     static snapshot(source: Function): void {
         const config = <ConfigImpl>Container.bind(source);
         Container.snapshots.providers.set(source, config.iocprovider);
-        if(config.iocscope) {
+        if (config.iocscope) {
             Container.snapshots.scopes.set(source, config.iocscope);
         }
         return;
@@ -274,12 +294,12 @@ export class Container {
      * @param source The dependency type
      */
     static restore(source: Function): void {
-        if(!(Container.snapshots.providers.has(source))) {
+        if (!(Container.snapshots.providers.has(source))) {
             throw new TypeError('Config for source was never snapshoted.');
         }
         const config = Container.bind(source);
         config.provider(Container.snapshots.providers.get(source));
-        if(Container.snapshots.scopes.has(source)) {
+        if (Container.snapshots.scopes.has(source)) {
             config.scope(Container.snapshots.scopes.get(source));
         }
     }
@@ -331,10 +351,10 @@ class IoCContainer {
         const propKey = `__${key}`;
         Object.defineProperty(target.prototype, key, {
             enumerable: true,
-            get: function() {
+            get: function () {
                 return this[propKey] ? this[propKey] : this[propKey] = IoCContainer.get(propertyType);
             },
-            set: function(newValue) {
+            set: function (newValue) {
                 this[propKey] = newValue;
             }
         });
